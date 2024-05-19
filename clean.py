@@ -1,3 +1,29 @@
+''' ======================================================================
+* Copyright (c) 2023, MongooseOrion.
+* All rights reserved.
+*
+* The following code snippet may contain portions that are derived from
+* OPEN-SOURCE communities, and these portions will be licensed with: 
+*
+* <GPLv3>
+*
+* If there is no OPEN-SOURCE licenses are listed, it indicates none of
+* content in this Code document is sourced from OPEN-SOURCE communities. 
+*
+* In this case, the document is protected by copyright, and any use of
+* all or part of its content by individuals, organizations, or companies
+* without authorization is prohibited, unless the project repository
+* associated with this document has added relevant OPEN-SOURCE licenses
+* by github.com/MongooseOrion. 
+*
+* Please make sure using the content of this document in accordance with 
+* the respective OPEN-SOURCE licenses. 
+* 
+* THIS CODE IS PROVIDED BY https://github.com/MongooseOrion. 
+* FILE ENCODER TYPE: UTF-8
+* ========================================================================
+'''
+# 将待训练的文件的参数归一化，以便输入模型
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 import argparse
@@ -24,10 +50,15 @@ def envelope(y, rate, threshold):
     return mask, y_mean
 
 
-def downsample_mono(path, sr):
-    obj = wavio.read(path)
-    wav = obj.data.astype(np.float32, order='F')
-    rate = obj.rate
+def downsample_mono(data, sr, func = 1):
+    if(func == 1):
+        obj = wavio.read(data)
+        wav = obj.data.astype(np.float32, order='F')
+        rate = obj.rate
+    else:
+        wav = np.frombuffer(data, dtype=np.int16)  # 将接收到的数据转换为NumPy数组
+        wav = wav.astype(np.float32)  # 将数据类型转换为float32
+        rate = 48000
     try:
         channel = wav.shape[1]
         if channel == 2:
@@ -64,9 +95,16 @@ def split_wavs(args):
 
     wav_paths = glob('{}/**'.format(src_root), recursive=True)
     wav_paths = [x for x in wav_paths if '.wav' in x]
-    dirs = os.listdir(src_root)
     check_dir(dst_root)
     classes = os.listdir(src_root)
+    # 检查并重新创建类别文件
+    classes_file = 'classes.txt'
+    if os.path.exists(classes_file):
+        os.remove(classes_file)
+    # 写入类别到单独的txt文件
+    with open('classes.txt', 'w') as f:
+        for _cls in classes:
+            f.write(_cls + '\n')
     for _cls in classes:
         target_dir = os.path.join(dst_root, _cls)
         check_dir(target_dir)
@@ -77,6 +115,7 @@ def split_wavs(args):
             mask, y_mean = envelope(wav, rate, threshold=args.threshold)
             wav = wav[mask]
             delta_sample = int(dt*rate)
+            offset_samples = int(args.offset_time * rate)  # 添加的偏移量
 
             # cleaned audio is less than a single sample
             # pad with zeros to delta_sample size
@@ -123,9 +162,10 @@ if __name__ == '__main__':
                         help='directory to put audio files split by delta_time')
     parser.add_argument('--delta_time', '-dt', type=float, default=1.0,
                         help='time in seconds to sample audio')
+    parser.add_argument('--offset_time', '-ot', type=float, default=1.0,
+                    help='time in seconds to start sample audio')
     parser.add_argument('--sr', type=int, default=16000,
                         help='rate to downsample audio')
-
     parser.add_argument('--fn', type=str, default='3a3d0279',
                         help='file to plot over time to check magnitude')
     parser.add_argument('--threshold', type=str, default=20,
