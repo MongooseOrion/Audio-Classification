@@ -24,6 +24,7 @@
 * ========================================================================
 '''
 # 将源目录中的音频按照相同的路径转换为 WAV，并将采样率重采样为 16kHz
+# 在使用前，请先安装 ffmpeg，然后将其安装目录添加到 path 中
 from pydub import AudioSegment
 import os
 import shutil

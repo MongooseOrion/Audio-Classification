@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from scipy.io import wavfile
 import argparse
 import os
+import shutil
 from glob import glob
 import numpy as np
 import pandas as pd
@@ -86,6 +87,9 @@ def save_sample(sample, rate, target_dir, fn, ix):
 def check_dir(path):
     if os.path.exists(path) is False:
         os.mkdir(path)
+    else:
+        shutil.rmtree(path)
+        os.mkdir(path)
 
 
 def split_wavs(args):
@@ -101,7 +105,7 @@ def split_wavs(args):
     classes_file = 'classes.txt'
     if os.path.exists(classes_file):
         os.remove(classes_file)
-    # 写入类别到单独的txt文件
+    # 写入类别到 txt 文件
     with open('classes.txt', 'w') as f:
         for _cls in classes:
             f.write(_cls + '\n')
